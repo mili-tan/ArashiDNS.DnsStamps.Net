@@ -9,6 +9,9 @@
     <PackageProjectUrl>https://github.com/mili-tan/ArashiDNS.DnsStampsNet</PackageProjectUrl>
     <Description>DNS Stamp encode/decode library for dotnet </Description>
     <Authors>Milkey Tan</Authors>
+    <PackageId>DnsStamps.Net</PackageId>
+    <Product>DnsStamps.Net</Product>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
 </Project>
