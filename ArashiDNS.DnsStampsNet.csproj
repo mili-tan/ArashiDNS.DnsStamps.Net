@@ -4,6 +4,11 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Title>DnsStamps.Net</Title>
+    <PackageProjectUrl>https://github.com/mili-tan/ArashiDNS.DnsStampsNet</PackageProjectUrl>
+    <Description>DNS Stamp encode/decode library for dotnet </Description>
+    <Authors>Milkey Tan</Authors>
   </PropertyGroup>
 
 </Project>

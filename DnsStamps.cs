@@ -33,14 +33,14 @@ namespace DnsStamps
         string ToString();
     }
 
-    public class DNSCryptStamp : IStamp
+    public class DnsCryptStamp : IStamp
     {
         public StampProperties Properties { get; } = new StampProperties();
         public string Address { get; }
         public string PublicKey { get; }
         public string ProviderName { get; }
 
-        public DNSCryptStamp(string address, string publicKey, string providerName)
+        public DnsCryptStamp(string address, string publicKey, string providerName)
         {
             Address = address;
             PublicKey = SanitizeHex(publicKey);
@@ -70,7 +70,7 @@ namespace DnsStamps
         }
     }
 
-    public class DOHStamp : IStamp
+    public class DoHStamp : IStamp
     {
         public StampProperties Properties { get; } = new StampProperties();
         public string Address { get; }
@@ -78,7 +78,7 @@ namespace DnsStamps
         public string HostName { get; }
         public string Path { get; }
 
-        public DOHStamp(string address, string hash, string hostName, string path)
+        public DoHStamp(string address, string hash, string hostName, string path)
         {
             Address = address;
             Hash = SanitizeHex(hash);
@@ -114,14 +114,14 @@ namespace DnsStamps
         }
     }
 
-    public class DOTStamp : IStamp
+    public class DoTStamp : IStamp
     {
         public StampProperties Properties { get; } = new StampProperties();
         public string Address { get; }
         public string Hash { get; }
         public string HostName { get; }
 
-        public DOTStamp(string address, string hash, string hostName)
+        public DoTStamp(string address, string hash, string hostName)
         {
             Address = address;
             Hash = SanitizeHex(hash);
@@ -202,7 +202,7 @@ namespace DnsStamps
                     index += pkLen;
                     int providerLen = data[index++];
                     var provider = Encoding.UTF8.GetString(data, index, providerLen);
-                    return new DNSCryptStamp(address, pk, provider);
+                    return new DnsCryptStamp(address, pk, provider);
 
                 case Protocol.DOH:
                     int hashLen = data[index++];
@@ -213,7 +213,7 @@ namespace DnsStamps
                     index += hostLen;
                     int pathLen = data[index++];
                     var path = Encoding.UTF8.GetString(data, index, pathLen);
-                    return new DOHStamp(address, hash, host, path);
+                    return new DoHStamp(address, hash, host, path);
 
                 case Protocol.DOT:
                     int dotHashLen = data[index++];
@@ -221,7 +221,7 @@ namespace DnsStamps
                     index += dotHashLen;
                     int dotHostLen = data[index++];
                     var dotHost = Encoding.UTF8.GetString(data, index, dotHostLen);
-                    return new DOTStamp(address, dotHash, dotHost);
+                    return new DoTStamp(address, dotHash, dotHost);
 
                 case Protocol.Plain:
                     return new PlainStamp(address);
