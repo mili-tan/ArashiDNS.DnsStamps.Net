@@ -14,3 +14,5 @@ Console.WriteLine(new DnsStamps.DOHStamp(address: "8.8.8.8", hash: "", hostName:
     {Properties = {DnsSec = true, NoFilter = false, NoLog = false}}.ToString());
 ```
 
+Refer to the great implementation of [**rs/node-dnsstamp**](https://github.com/rs/node-dnsstamp)
+
