@@ -1,6 +1,6 @@
 # DnsStamps.Net
 
-[Nuget](https://www.nuget.org/packages/DnsStamps).Net
+[Nuget](https://www.nuget.org/packages/DnsStamps.Net)
 
 ```csharp
 using DnsStamps;
