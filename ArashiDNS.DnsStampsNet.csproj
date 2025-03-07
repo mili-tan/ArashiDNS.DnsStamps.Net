@@ -12,7 +12,7 @@
     <PackageId>DnsStamps.Net</PackageId>
     <Product>DnsStamps.Net</Product>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
   </PropertyGroup>
 
 </Project>
