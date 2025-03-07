@@ -23,5 +23,5 @@ if (StampParser.Parse("sdns://AgMAAAAAAAAADDk0LjE0MC4xNS4xNSCaOjT3J965vKUQA9nOnD
 }
 ```
 
-Refer to the great implementation of [**rs/node-dnsstamp**](https://github.com/rs/node-dnsstamp)
+Refer to the great implementation of [**martinheidegger/node-dnsstampp**](https://github.com/martinheidegger/node-dnsstamp)
 
