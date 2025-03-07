@@ -9,7 +9,10 @@ namespace DnsStamps
         DNSCrypt = 0x01,
         DOH,
         DOT,
-        Plain
+        Plain,
+        ODOH,
+        AnonymizedRelay = 0x81,
+        ODOHRelay = 0x85
     }
 
     public class StampProperties
@@ -70,25 +73,56 @@ namespace DnsStamps
         }
     }
 
-    public class DoHStamp : IStamp
+    public class ODoHStamp : IStamp
     {
         public StampProperties Properties { get; } = new StampProperties();
-        public string Address { get; }
-        public string Hash { get; }
         public string HostName { get; }
         public string Path { get; }
 
-        public DoHStamp(string address, string hash, string hostName, string path)
+        public ODoHStamp(string hostName, string path)
         {
-            Address = address;
-            Hash = SanitizeHex(hash);
             HostName = hostName;
             Path = path;
         }
 
+        public virtual string ToString()
+        {
+            var bytes = new List<byte> { (byte)Protocol.ODOH, Properties.ToByte(), 0, 0, 0, 0, 0, 0, 0 };
+
+            // HostName
+            var hostBytes = Encoding.UTF8.GetBytes(HostName);
+            bytes.Add((byte)hostBytes.Length);
+            bytes.AddRange(hostBytes);
+
+            // Path
+            var pathBytes = Encoding.UTF8.GetBytes(Path);
+            bytes.Add((byte)pathBytes.Length);
+            bytes.AddRange(pathBytes);
+
+            return $"sdns://{UrlSafeBase64Encode(bytes.ToArray())}";
+        }
+    }
+
+    public class DoHStamp : ODoHStamp
+    {
+        public string Address { get; }
+        public string Hash { get; }
+
+        public DoHStamp(string address, string? hash, string hostName, string path)
+            : base(hostName, path)
+        {
+            Address = address;
+            Hash = SanitizeHex(hash);
+        }
+
         public override string ToString()
         {
-            var bytes = new List<byte> { (byte)Protocol.DOH, Properties.ToByte(), 0, 0, 0, 0, 0, 0, 0 };
+            return BuildStamp(Protocol.DOH);
+        }
+
+        protected string BuildStamp(Protocol protocol)
+        {
+            var bytes = new List<byte> { (byte)protocol, Properties.ToByte(), 0, 0, 0, 0, 0, 0, 0 };
 
             // Address
             var addrBytes = Encoding.UTF8.GetBytes(Address);
@@ -110,6 +144,36 @@ namespace DnsStamps
             bytes.Add((byte)pathBytes.Length);
             bytes.AddRange(pathBytes);
 
+            return $"sdns://{UrlSafeBase64Encode(bytes.ToArray())}";
+        }
+    }
+
+    public class ODoHRelayStamp : DoHStamp
+    {
+        public ODoHRelayStamp(string address, string? hash, string hostName, string path)
+            : base(address, hash, hostName, path) { }
+
+        public override string ToString()
+        {
+            return BuildStamp(Protocol.ODOHRelay);
+        }
+    }
+
+    public class AnonymizedRelayStamp : IStamp
+    {
+        public string Address { get; }
+
+        public AnonymizedRelayStamp(string address)
+        {
+            Address = address;
+        }
+
+        public override string ToString()
+        {
+            var bytes = new List<byte> { (byte)Protocol.AnonymizedRelay };
+            var addrBytes = Encoding.UTF8.GetBytes(Address);
+            bytes.Add((byte)addrBytes.Length);
+            bytes.AddRange(addrBytes);
             return $"sdns://{UrlSafeBase64Encode(bytes.ToArray())}";
         }
     }
@@ -182,12 +246,13 @@ namespace DnsStamps
                 throw new ArgumentException("Invalid scheme");
 
             var data = UrlSafeBase64Decode(stamp[7..]);
-            var props = new StampProperties
+
+            if (data[0] == (byte)Protocol.AnonymizedRelay)
             {
-                DnsSec = (data[1] & (1 << 0)) != 0,
-                NoLog = (data[1] & (1 << 1)) != 0,
-                NoFilter = (data[1] & (1 << 2)) != 0
-            };
+                int addrLenA = data[1];
+                var addressA = Encoding.UTF8.GetString(data, 2, addrLenA);
+                return new AnonymizedRelayStamp(addressA);
+            }
 
             var index = 9;
             var addrLen = data[index++];
@@ -223,11 +288,42 @@ namespace DnsStamps
                     var dotHost = Encoding.UTF8.GetString(data, index, dotHostLen);
                     return new DoTStamp(address, dotHash, dotHost);
 
+                case Protocol.ODOH:
+                    int pathLenO = data[index++];
+                    var pathO = Encoding.UTF8.GetString(data, index, pathLenO);
+                    return new ODoHStamp(address, pathO);
+
+                case Protocol.ODOHRelay:
+                    int relayHashLen = data[index++];
+                    var relayHash = BytesToHex(data, index, relayHashLen);
+                    index += relayHashLen;
+                    int relayHostLen = data[index++];
+                    var relayHost = Encoding.UTF8.GetString(data, index, relayHostLen);
+                    index += relayHostLen;
+                    int relayPathLen = data[index++];
+                    var relayPath = Encoding.UTF8.GetString(data, index, relayPathLen);
+                    return new ODoHRelayStamp(address, relayHash, relayHost, relayPath);
+
                 case Protocol.Plain:
                     return new PlainStamp(address);
             }
 
             throw new NotSupportedException($"Unsupported protocol: {data[0]}");
+        }
+
+        public static StampProperties ParseProps(string stamp)
+        {
+            if (!stamp.StartsWith("sdns://"))
+                throw new ArgumentException("Invalid scheme");
+
+            var data = UrlSafeBase64Decode(stamp[7..]);
+
+            return new StampProperties
+            {
+                DnsSec = (data[1] & (1 << 0)) != 0,
+                NoLog = (data[1] & (1 << 1)) != 0,
+                NoFilter = (data[1] & (1 << 2)) != 0
+            };
         }
     }
     
