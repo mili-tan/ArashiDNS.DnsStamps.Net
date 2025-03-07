@@ -254,6 +254,13 @@ namespace DnsStamps
                 return new AnonymizedRelayStamp(addressA);
             }
 
+            var props = new StampProperties
+            {
+                DnsSec = (data[1] & (1 << 0)) != 0,
+                NoLog = (data[1] & (1 << 1)) != 0,
+                NoFilter = (data[1] & (1 << 2)) != 0
+            };
+
             var index = 9;
             var addrLen = data[index++];
             var address = Encoding.UTF8.GetString(data, index, addrLen);
@@ -267,7 +274,8 @@ namespace DnsStamps
                     index += pkLen;
                     int providerLen = data[index++];
                     var provider = Encoding.UTF8.GetString(data, index, providerLen);
-                    return new DnsCryptStamp(address, pk, provider);
+                    return new DnsCryptStamp(address, pk, provider)
+                        {Properties = {DnsSec = props.DnsSec, NoFilter = props.NoFilter, NoLog = props.NoLog}};
 
                 case Protocol.DOH:
                     int hashLen = data[index++];
@@ -278,7 +286,8 @@ namespace DnsStamps
                     index += hostLen;
                     int pathLen = data[index++];
                     var path = Encoding.UTF8.GetString(data, index, pathLen);
-                    return new DoHStamp(address, hash, host, path);
+                    return new DoHStamp(address, hash, host, path)
+                        { Properties = { DnsSec = props.DnsSec, NoFilter = props.NoFilter, NoLog = props.NoLog } };
 
                 case Protocol.DOT:
                     int dotHashLen = data[index++];
@@ -286,12 +295,14 @@ namespace DnsStamps
                     index += dotHashLen;
                     int dotHostLen = data[index++];
                     var dotHost = Encoding.UTF8.GetString(data, index, dotHostLen);
-                    return new DoTStamp(address, dotHash, dotHost);
+                    return new DoTStamp(address, dotHash, dotHost)
+                        { Properties = { DnsSec = props.DnsSec, NoFilter = props.NoFilter, NoLog = props.NoLog } };
 
                 case Protocol.ODOH:
                     int pathLenO = data[index++];
                     var pathO = Encoding.UTF8.GetString(data, index, pathLenO);
-                    return new ODoHStamp(address, pathO);
+                    return new ODoHStamp(address, pathO)
+                        { Properties = { DnsSec = props.DnsSec, NoFilter = props.NoFilter, NoLog = props.NoLog } };
 
                 case Protocol.ODOHRelay:
                     int relayHashLen = data[index++];
@@ -302,10 +313,13 @@ namespace DnsStamps
                     index += relayHostLen;
                     int relayPathLen = data[index++];
                     var relayPath = Encoding.UTF8.GetString(data, index, relayPathLen);
-                    return new ODoHRelayStamp(address, relayHash, relayHost, relayPath);
+                    return new ODoHRelayStamp(address, relayHash, relayHost, relayPath)
+                        { Properties = { DnsSec = props.DnsSec, NoFilter = props.NoFilter, NoLog = props.NoLog } };
 
                 case Protocol.Plain:
-                    return new PlainStamp(address);
+                    return new PlainStamp(address)
+                        { Properties = { DnsSec = props.DnsSec, NoFilter = props.NoFilter, NoLog = props.NoLog } };
+
             }
 
             throw new NotSupportedException($"Unsupported protocol: {data[0]}");
